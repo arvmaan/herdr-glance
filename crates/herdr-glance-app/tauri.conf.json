@@ -1,0 +1,46 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Herdr Glance",
+  "version": "0.1.0",
+  "identifier": "com.arvmaan.herdr-glance",
+  "build": {
+    "frontendDist": "../../ui"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "macOSPrivateApi": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "Herdr Glance",
+        "width": 200,
+        "height": 36,
+        "minWidth": 180,
+        "minHeight": 35,
+        "resizable": false,
+        "maximizable": false,
+        "alwaysOnTop": true,
+        "visibleOnAllWorkspaces": true,
+        "visible": true,
+        "decorations": false,
+        "acceptFirstMouse": true,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/256x256.png"
+    ],
+    "macOS": {
+      "minimumSystemVersion": "13.0"
+    }
+  }
+}

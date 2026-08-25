@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Herdr Glance</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-view-mode="compact" data-theme="light">
+  <header id="widget-bar" data-tauri-drag-region>
+    <div class="status-strip" aria-label="Agent status summary">
+      <span id="connection-indicator" class="connection-indicator"
+            title="Connecting"></span>
+      <span id="compact-agent" class="compact-agent">
+        <span class="compact-agent-dot"></span>
+        <strong id="compact-agent-name">No agents</strong>
+        <span id="compact-agent-extra" class="compact-agent-extra"></span>
+      </span>
+      <span class="status-count working" title="Working agents">
+        <span class="status-dot"></span>
+        <strong id="working-count">0</strong>
+      </span>
+      <span class="status-count blocked" title="Blocked agents">
+        <span class="status-dot"></span>
+        <strong id="blocked-count">0</strong>
+      </span>
+      <span class="status-count idle" title="Idle agents">
+        <span class="status-dot"></span>
+        <strong id="idle-count">0</strong>
+      </span>
+    </div>
+    <span id="settings-title" class="settings-title" hidden>Connection</span>
+
+    <button id="mode-button" class="icon-button mode-button" type="button"
+            title="Switch to list view" aria-label="Switch to list view">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <path d="M3 9h18"/>
+        <path class="mode-chevron" d="m9 14 3 3 3-3"/>
+      </svg>
+    </button>
+    <button id="settings-button" class="icon-button" type="button"
+            title="Connection settings" aria-label="Connection settings"
+            aria-expanded="false">
+      <svg class="settings-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>
+      <svg class="close-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M18 6 6 18M6 6l12 12"/>
+      </svg>
+    </button>
+  </header>
+
+  <main>
+    <section id="agents-view" class="view agents-view">
+      <div class="filter-bar">
+        <div class="filter-tabs" role="group" aria-label="Agent visibility">
+          <button class="filter active" type="button" data-mode="active">Active</button>
+          <button class="filter" type="button" data-mode="all">All</button>
+        </div>
+        <span id="summary" class="summary">0 agents</span>
+      </div>
+      <div id="agent-list" class="agent-list" aria-live="polite"></div>
+      <footer id="last-update">Not connected</footer>
+    </section>
+
+    <section id="settings-view" class="view settings-view" hidden>
+      <div class="connection-mode" role="group" aria-label="Connection type">
+        <button class="connection-option active" type="button"
+                data-connection-mode="local">Local</button>
+        <button class="connection-option" type="button"
+                data-connection-mode="ssh">SSH</button>
+      </div>
+      <label class="theme-row">
+        <span>Dark mode</span>
+        <input id="theme-toggle" class="theme-toggle-input" type="checkbox"
+               role="switch" aria-label="Dark mode">
+        <span class="theme-toggle-track" aria-hidden="true">
+          <span class="theme-toggle-thumb"></span>
+        </span>
+      </label>
+      <label id="ssh-host-field" hidden>
+        SSH host
+        <input id="ssh-target" type="text" autocomplete="off"
+               spellcheck="false" placeholder="herdr-host">
+      </label>
+      <label>
+        Herdr executable
+        <input id="remote-herdr" type="text" autocomplete="off"
+               spellcheck="false" placeholder="/home/me/.local/bin/herdr">
+      </label>
+
+      <p id="settings-message" class="settings-message" aria-live="polite"></p>
+      <div class="settings-actions">
+        <button id="test-button" class="button secondary" type="button">Test</button>
+        <button id="save-button" class="button primary" type="button">Save</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

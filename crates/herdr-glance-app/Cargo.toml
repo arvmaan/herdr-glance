@@ -1,0 +1,16 @@
+[package]
+name = "herdr-glance-app"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Always-on-top Herdr agent status widget"
+
+[dependencies]
+herdr-glance-core = { path = "../herdr-glance-core" }
+serde = { version = "1", features = ["derive"] }
+tauri = { version = "2", features = ["macos-private-api"] }
+tauri-plugin-window-state = "2"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
