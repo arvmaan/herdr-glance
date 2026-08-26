@@ -24,8 +24,8 @@ agent without returning to the terminal first.
 - **Content-sized** - The window grows only as far as the current view needs.
 - **Native widget behavior** - Always on top, visible across workspaces,
   draggable, and position-aware.
-- **Direct terminal attach** - Click a pill or row to open that agent in
-  macOS Terminal, locally or through SSH.
+- **Direct Ghostty attach** - Click a pill or row to open that agent in
+  Ghostty, locally or through SSH.
 - **Light or dark** - A compact appearance toggle follows you across launches.
 - **No frontend toolchain** - The Tauri shell serves plain HTML, CSS, and
   JavaScript.
@@ -56,6 +56,7 @@ Prerequisites:
 
 - [Rust](https://rustup.rs)
 - Xcode Command Line Tools
+- [Ghostty](https://ghostty.org)
 - Herdr 0.8.0 or newer
 
 ```sh
@@ -90,7 +91,7 @@ On first launch:
 4. Select **Test**, then **Save**.
 
 The compact widget opens after the connection is saved. Click its agent pill,
-or any agent row in the larger views, to open a Terminal window attached
+or any agent row in the larger views, to open a Ghostty window attached
 directly to that agent.
 
 ## Herdr plugin
@@ -165,10 +166,10 @@ Herdr Glance UI  <--- Tauri IPC --- Rust core
 
 The Rust core validates the connection, runs Herdr locally or over SSH, parses
 the snapshot JSON into a stable agent model, and returns it to the frontend.
-The UI polls every two seconds. Clicking an agent opens macOS Terminal with a
-direct `herdr agent attach` session. SSH connections run the attachment on the
-remote host, so Herdr does not need to be installed on the laptop. Failed polls
-clear stale rows and turn the connection indicator red.
+The UI polls every two seconds. Clicking an agent opens Ghostty with a direct
+`herdr agent attach` session. SSH connections run the attachment on the remote
+host, so Herdr does not need to be installed on the laptop. Failed polls clear
+stale rows and turn the connection indicator red.
 
 SSH commands use:
 
@@ -178,7 +179,7 @@ ConnectTimeout=5
 ```
 
 This prevents password prompts from hanging the widget. The interactive
-Terminal attachment can still show an SSH password or key prompt. Remote
+Ghostty attachment can still show an SSH password or key prompt. Remote
 executable paths and command arguments are shell-quoted before execution.
 
 ## Connections
@@ -313,7 +314,7 @@ The frontend has no Node dependency or build step.
 - The app is ad-hoc signed and not notarized.
 - Connection polling and testing require key-based, non-interactive SSH
   authentication.
-- Agent clicks currently open Apple's Terminal app.
+- Agent clicks require Ghostty to be installed.
 - macOS runtime behavior still needs validation on a physical Mac after each
   window-shell change.
 
