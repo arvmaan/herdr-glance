@@ -51,18 +51,11 @@ pub async fn focus_agent(config: &ConnectionConfig, pane_id: &str) -> Result<(),
         .map(|_| ())
 }
 
-pub fn agent_attach_shell_command(
-    config: &ConnectionConfig,
-    pane_id: &str,
-) -> Result<String, HerdrError> {
+pub fn herdr_session_shell_command(config: &ConnectionConfig) -> Result<String, HerdrError> {
     config.validate()?;
-    validate_pane_id(pane_id)?;
 
     if config.uses_ssh() {
-        let remote = remote_command(
-            &config.remote_herdr,
-            &["agent", "attach", pane_id, "--takeover"],
-        );
+        let remote = remote_command(&config.remote_herdr, &[]);
         Ok(format!(
             "ssh -t -o ConnectTimeout=5 -o LogLevel=ERROR {} {}",
             shell_quote(&config.ssh_target),
@@ -73,11 +66,7 @@ pub fn agent_attach_shell_command(
         let binary = binary.to_str().ok_or_else(|| {
             HerdrError::Command("Herdr executable path is not valid UTF-8.".to_string())
         })?;
-        Ok(format!(
-            "{} agent attach {} --takeover",
-            shell_quote(binary),
-            shell_quote(pane_id)
-        ))
+        Ok(shell_quote(binary))
     }
 }
 
@@ -370,28 +359,28 @@ mod tests {
     }
 
     #[test]
-    fn builds_local_attach_command() {
+    fn builds_local_session_command() {
         let config = ConnectionConfig {
             ssh_target: String::new(),
             remote_herdr: "/Applications/My Herdr/herdr".to_string(),
         };
 
         assert_eq!(
-            agent_attach_shell_command(&config, "w1:p1").unwrap(),
-            "'/Applications/My Herdr/herdr' agent attach w1:p1 --takeover"
+            herdr_session_shell_command(&config).unwrap(),
+            "'/Applications/My Herdr/herdr'"
         );
     }
 
     #[test]
-    fn builds_ssh_attach_command() {
+    fn builds_ssh_session_command() {
         let config = ConnectionConfig {
             ssh_target: "herdr-host".to_string(),
             remote_herdr: "/home/me/My Herdr/herdr".to_string(),
         };
 
         assert_eq!(
-            agent_attach_shell_command(&config, "w1:p1").unwrap(),
-            "ssh -t -o ConnectTimeout=5 -o LogLevel=ERROR herdr-host 'PATH=\"$HOME/.local/bin:$HOME/.cargo/bin:$HOME/bin:$PATH\" '\"'\"'/home/me/My Herdr/herdr'\"'\"' agent attach w1:p1 --takeover'"
+            herdr_session_shell_command(&config).unwrap(),
+            "ssh -t -o ConnectTimeout=5 -o LogLevel=ERROR herdr-host 'PATH=\"$HOME/.local/bin:$HOME/.cargo/bin:$HOME/bin:$PATH\" '\"'\"'/home/me/My Herdr/herdr'\"'\"''"
         );
     }
 }

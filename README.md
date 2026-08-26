@@ -24,8 +24,8 @@ agent without returning to the terminal first.
 - **Content-sized** - The window grows only as far as the current view needs.
 - **Native widget behavior** - Always on top, visible across workspaces,
   draggable, and position-aware.
-- **Direct Ghostty attach** - Click a pill or row to open that agent in
-  Ghostty, locally or through SSH.
+- **One-click Herdr focus** - Click a pill or row to open the full Herdr UI at
+  that agent, or reuse its existing Ghostty window.
 - **Light or dark** - A compact appearance toggle follows you across launches.
 - **No frontend toolchain** - The Tauri shell serves plain HTML, CSS, and
   JavaScript.
@@ -91,8 +91,8 @@ On first launch:
 4. Select **Test**, then **Save**.
 
 The compact widget opens after the connection is saved. Click its agent pill,
-or any agent row in the larger views, to open a Ghostty window attached
-directly to that agent.
+or any agent row in the larger views, to bring up the full Herdr UI with that
+agent's pane selected.
 
 ## Herdr plugin
 
@@ -156,20 +156,31 @@ Herdr Glance UI  <--- Tauri IPC --- Rust core
                   |                                       |
                   v                                       v
        <herdr> api snapshot                 ssh <host> <herdr> api snapshot
-       <herdr> agent attach <id>            ssh -t <host> <herdr> agent attach <id>
+       <herdr> agent focus <id>             ssh <host> <herdr> agent focus <id>
                   |                                       |
                   +-------------------+-------------------+
                                       |
                                       v
                               Herdr socket API
+                                      |
+                                      v
+                    Ghostty: <herdr> or ssh -t <host> <herdr>
 ```
 
 The Rust core validates the connection, runs Herdr locally or over SSH, parses
 the snapshot JSON into a stable agent model, and returns it to the frontend.
-The UI polls every two seconds. Clicking an agent opens Ghostty with a direct
-`herdr agent attach` session. SSH connections run the attachment on the remote
-host, so Herdr does not need to be installed on the laptop. Failed polls clear
-stale rows and turn the connection indicator red.
+The UI polls every two seconds. Clicking an agent first asks Herdr to focus that
+pane, then activates Glance's existing Ghostty window. If the window does not
+exist, Glance opens the complete Herdr UI and remembers it for later clicks.
+SSH connections run Herdr on the remote host, so Herdr does not need to be
+installed on the laptop. Failed polls clear stale rows and turn the connection
+indicator red.
+
+Ghostty 1.3+ with `macos-applescript=true` exposes a native scripting identity
+that Glance uses to focus the exact terminal. Other configurations use a
+connection-specific `Herdr Glance` window title and macOS Accessibility
+automation. macOS may ask for permission the first time Glance focuses that
+window.
 
 SSH commands use:
 
@@ -179,7 +190,7 @@ ConnectTimeout=5
 ```
 
 This prevents password prompts from hanging the widget. The interactive
-Ghostty attachment can still show an SSH password or key prompt. Remote
+Ghostty session can still show an SSH password or key prompt. Remote
 executable paths and command arguments are shell-quoted before execution.
 
 ## Connections
@@ -315,6 +326,8 @@ The frontend has no Node dependency or build step.
 - Connection polling and testing require key-based, non-interactive SSH
   authentication.
 - Agent clicks require Ghostty to be installed.
+- Ghostty without native AppleScript support may require Accessibility
+  permission so Glance can raise its dedicated Herdr window.
 - macOS runtime behavior still needs validation on a physical Mac after each
   window-shell change.
 

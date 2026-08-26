@@ -208,7 +208,7 @@ function renderAgents() {
     row.type = "button";
     row.className = `agent-row${agent.focused ? " focused" : ""}`;
     row.dataset.status = agent.status;
-    row.title = `Open ${agent.name} in Ghostty`;
+    row.title = `Focus ${agent.name} in Herdr`;
     row.disabled = state.openingPaneId !== null;
 
     const rail = document.createElement("span");
@@ -263,7 +263,7 @@ function renderSummary() {
   elements.compactAgent.disabled = !compactAgent || state.openingPaneId !== null;
   elements.compactAgent.dataset.status = compactAgent?.status || "unknown";
   elements.compactAgent.title = compactAgent
-    ? `Open ${compactAgent.name} in Ghostty`
+    ? `Focus ${compactAgent.name} in Herdr`
     : "No agents";
   const additionalAgents = Math.max(0, activeAgents.length - 1);
   elements.compactAgentExtra.textContent = additionalAgents > 0
@@ -281,8 +281,12 @@ async function openAgent(agent) {
   renderAgents();
   elements.lastUpdate.textContent = `Opening ${agent.name}`;
   try {
-    await invoke("open_agent_terminal", { paneId: agent.pane_id });
-    elements.lastUpdate.textContent = `Ghostty requested for ${agent.name}`;
+    const action = await invoke("open_agent_in_herdr", {
+      paneId: agent.pane_id,
+    });
+    elements.lastUpdate.textContent = action === "focused"
+      ? `Focused ${agent.name}`
+      : `Opened Herdr at ${agent.name}`;
   } catch (error) {
     elements.lastUpdate.textContent = String(error);
   } finally {

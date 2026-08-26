@@ -36,7 +36,7 @@ fn main() {
             commands::get_connection,
             commands::save_connection,
             commands::list_agents,
-            commands::open_agent_terminal,
+            commands::open_agent_in_herdr,
             commands::test_connection,
             commands::resize_window,
         ])
