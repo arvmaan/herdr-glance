@@ -1,7 +1,6 @@
 <p align="center">
-  <img src="assets/icon.png" width="112" alt="Herdr Glance icon" />
+<img width="271" height="233" alt="image" src="https://github.com/user-attachments/assets/29604f3f-aa2e-405e-9a59-39cf955f593f" />
 </p>
-
 <h1 align="center"><code>herdr-glance</code></h1>
 
 <p align="center">
