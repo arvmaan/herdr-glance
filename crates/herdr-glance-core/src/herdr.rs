@@ -45,12 +45,47 @@ pub async fn list_agents(config: &ConnectionConfig) -> Result<Vec<AgentView>, He
 }
 
 pub async fn focus_agent(config: &ConnectionConfig, pane_id: &str) -> Result<(), HerdrError> {
-    if pane_id.is_empty() || pane_id.chars().any(char::is_control) {
-        return Err(HerdrError::Command("invalid pane identifier".to_string()));
-    }
+    validate_pane_id(pane_id)?;
     run_herdr(config, &["agent", "focus", pane_id])
         .await
         .map(|_| ())
+}
+
+pub fn agent_attach_shell_command(
+    config: &ConnectionConfig,
+    pane_id: &str,
+) -> Result<String, HerdrError> {
+    config.validate()?;
+    validate_pane_id(pane_id)?;
+
+    if config.uses_ssh() {
+        let remote = remote_command(
+            &config.remote_herdr,
+            &["agent", "attach", pane_id, "--takeover"],
+        );
+        Ok(format!(
+            "ssh -t -o ConnectTimeout=5 -o LogLevel=ERROR {} {}",
+            shell_quote(&config.ssh_target),
+            shell_quote(&remote)
+        ))
+    } else {
+        let binary = local_herdr_binary(config);
+        let binary = binary.to_str().ok_or_else(|| {
+            HerdrError::Command("Herdr executable path is not valid UTF-8.".to_string())
+        })?;
+        Ok(format!(
+            "{} agent attach {} --takeover",
+            shell_quote(binary),
+            shell_quote(pane_id)
+        ))
+    }
+}
+
+fn validate_pane_id(pane_id: &str) -> Result<(), HerdrError> {
+    if pane_id.is_empty() || pane_id.chars().any(char::is_control) {
+        return Err(HerdrError::Command("invalid pane identifier".to_string()));
+    }
+    Ok(())
 }
 
 async fn run_herdr(config: &ConnectionConfig, arguments: &[&str]) -> Result<Vec<u8>, HerdrError> {
@@ -332,5 +367,31 @@ mod tests {
             "PATH=\"$HOME/.local/bin:$HOME/.cargo/bin:$HOME/bin:$PATH\" '/Applications/My Herdr/herdr' agent focus w1:p1"
         );
         assert_eq!(shell_quote("it's"), "'it'\"'\"'s'");
+    }
+
+    #[test]
+    fn builds_local_attach_command() {
+        let config = ConnectionConfig {
+            ssh_target: String::new(),
+            remote_herdr: "/Applications/My Herdr/herdr".to_string(),
+        };
+
+        assert_eq!(
+            agent_attach_shell_command(&config, "w1:p1").unwrap(),
+            "'/Applications/My Herdr/herdr' agent attach w1:p1 --takeover"
+        );
+    }
+
+    #[test]
+    fn builds_ssh_attach_command() {
+        let config = ConnectionConfig {
+            ssh_target: "herdr-host".to_string(),
+            remote_herdr: "/home/me/My Herdr/herdr".to_string(),
+        };
+
+        assert_eq!(
+            agent_attach_shell_command(&config, "w1:p1").unwrap(),
+            "ssh -t -o ConnectTimeout=5 -o LogLevel=ERROR herdr-host 'PATH=\"$HOME/.local/bin:$HOME/.cargo/bin:$HOME/bin:$PATH\" '\"'\"'/home/me/My Herdr/herdr'\"'\"' agent attach w1:p1 --takeover'"
+        );
     }
 }

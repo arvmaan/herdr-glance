@@ -23,6 +23,8 @@ const state = {
     : DEFAULT_VIEW_MODE,
   configured: false,
   connectionMode: "local",
+  compactAgent: null,
+  openingPaneId: null,
   theme: initialTheme,
   settingsOpen: false,
   polling: false,
@@ -206,7 +208,8 @@ function renderAgents() {
     row.type = "button";
     row.className = `agent-row${agent.focused ? " focused" : ""}`;
     row.dataset.status = agent.status;
-    row.title = `Focus ${agent.name}`;
+    row.title = `Open ${agent.name} in Terminal`;
+    row.disabled = state.openingPaneId !== null;
 
     const rail = document.createElement("span");
     rail.className = "status-rail";
@@ -228,7 +231,7 @@ function renderAgents() {
     status.textContent = agent.status;
 
     row.append(rail, copy, statusDot, status);
-    row.addEventListener("click", () => focusAgent(agent, row));
+    row.addEventListener("click", () => openAgent(agent));
     elements.list.appendChild(row);
   }
   resizeWindow();
@@ -256,9 +259,11 @@ function renderSummary() {
   elements.blockedCount.textContent = String(blocked);
   elements.idleCount.textContent = String(idle);
   elements.compactAgentName.textContent = compactAgent?.name || "No agents";
+  state.compactAgent = compactAgent || null;
+  elements.compactAgent.disabled = !compactAgent || state.openingPaneId !== null;
   elements.compactAgent.dataset.status = compactAgent?.status || "unknown";
   elements.compactAgent.title = compactAgent
-    ? `${compactAgent.name} - ${compactAgent.status}`
+    ? `Open ${compactAgent.name} in Terminal`
     : "No agents";
   const additionalAgents = Math.max(0, activeAgents.length - 1);
   elements.compactAgentExtra.textContent = additionalAgents > 0
@@ -267,15 +272,25 @@ function renderSummary() {
   elements.summary.textContent = `${visibleAgents().length}/${state.agents.length}`;
 }
 
-async function focusAgent(agent, row) {
-  row.disabled = true;
+async function openAgent(agent) {
+  if (state.openingPaneId !== null) {
+    return;
+  }
+  state.openingPaneId = agent.pane_id;
+  renderSummary();
+  renderAgents();
+  elements.lastUpdate.textContent = `Opening ${agent.name}`;
   try {
-    await invoke("focus_agent", { paneId: agent.pane_id });
-    elements.lastUpdate.textContent = `Focused ${agent.name}`;
+    await invoke("open_agent_terminal", { paneId: agent.pane_id });
+    elements.lastUpdate.textContent = `Terminal requested for ${agent.name}`;
   } catch (error) {
     elements.lastUpdate.textContent = String(error);
   } finally {
-    row.disabled = false;
+    if (state.openingPaneId === agent.pane_id) {
+      state.openingPaneId = null;
+    }
+    renderSummary();
+    renderAgents();
   }
 }
 
@@ -360,6 +375,11 @@ function setSettingsBusy(busy) {
 
 function bindEvents() {
   elements.modeButton.addEventListener("click", cycleViewMode);
+  elements.compactAgent.addEventListener("click", () => {
+    if (state.compactAgent) {
+      openAgent(state.compactAgent);
+    }
+  });
   elements.settingsButton.addEventListener("click", () => {
     showSettings(!state.settingsOpen);
   });

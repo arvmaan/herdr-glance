@@ -1,6 +1,6 @@
 use herdr_glance_core::{
-    focus_agent as focus_remote_agent, list_agents as list_remote_agents,
-    save_config as persist_config, AgentView, ConnectionConfig,
+    agent_attach_shell_command, list_agents as list_remote_agents, save_config as persist_config,
+    AgentView, ConnectionConfig,
 };
 use serde::Serialize;
 use std::sync::Mutex;
@@ -82,11 +82,62 @@ pub async fn list_agents(state: State<'_, AppState>) -> Result<Vec<AgentView>, S
 }
 
 #[tauri::command]
-pub async fn focus_agent(pane_id: String, state: State<'_, AppState>) -> Result<(), String> {
+pub fn open_agent_terminal(pane_id: String, state: State<'_, AppState>) -> Result<(), String> {
     let config = state.config()?;
-    focus_remote_agent(&config, &pane_id)
-        .await
-        .map_err(|error| error.to_string())
+    let command =
+        agent_attach_shell_command(&config, &pane_id).map_err(|error| error.to_string())?;
+    launch_terminal_attach(&command)
+}
+
+#[cfg(target_os = "macos")]
+fn launch_terminal_attach(command: &str) -> Result<(), String> {
+    use std::fs::{self, OpenOptions};
+    use std::io::Write;
+    use std::os::unix::fs::OpenOptionsExt;
+    use std::process::Command;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    let unique = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|error| format!("System clock is unavailable: {error}"))?
+        .as_nanos();
+    let path = std::env::temp_dir().join(format!(
+        "herdr-glance-attach-{}-{unique}.command",
+        std::process::id()
+    ));
+    let mut script = OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .mode(0o700)
+        .open(&path)
+        .map_err(|error| format!("Could not prepare Terminal attach: {error}"))?;
+    writeln!(
+        script,
+        "#!/bin/sh\nscript_path=$0\nrm -f -- \"$script_path\"\nexec {command}"
+    )
+    .map_err(|error| format!("Could not prepare Terminal attach: {error}"))?;
+    drop(script);
+
+    let result = Command::new("/usr/bin/open")
+        .args(["-a", "Terminal"])
+        .arg(&path)
+        .status();
+    match result {
+        Ok(status) if status.success() => Ok(()),
+        Ok(status) => {
+            let _ = fs::remove_file(path);
+            Err(format!("Terminal could not open the agent ({status})."))
+        }
+        Err(error) => {
+            let _ = fs::remove_file(path);
+            Err(format!("Terminal could not open the agent: {error}"))
+        }
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+fn launch_terminal_attach(_command: &str) -> Result<(), String> {
+    Err("Opening an agent terminal is currently supported on macOS.".to_string())
 }
 
 #[tauri::command]
